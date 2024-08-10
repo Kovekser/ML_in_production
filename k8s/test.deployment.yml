@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-server
+  labels:
+    app: test-server
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-server
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: test-server
+    spec:
+      containers:
+          image: kovekser/ml-in-production:latest
+          imagePullPolicy: Always
+          name: test-server
+          ports:
+            - containerPort: 81
+      restartPolicy: Always

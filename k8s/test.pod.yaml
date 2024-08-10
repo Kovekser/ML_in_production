@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-server
+spec:
+  containers:
+  - name: test-server
+    image: kovekser/ml-in-production:latest
+    ports:
+    - containerPort: 80
