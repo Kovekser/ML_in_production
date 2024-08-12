@@ -3,13 +3,13 @@ kind: Deployment
 metadata:
   name: test-server
   labels:
-    app: test-server
+    app.kubernetes.io/name: test-server
   namespace: default
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: test-server
+      app.kubernetes.io/name: test-server
   strategy:
     rollingUpdate:
       maxSurge: 1
@@ -18,12 +18,12 @@ spec:
   template:
     metadata:
       labels:
-        app: test-server
+        app.kubernetes.io/name: test-server
     spec:
       containers:
+        - name: test-server
           image: kovekser/ml-in-production:latest
           imagePullPolicy: Always
-          name: test-server
           ports:
-            - containerPort: 81
+              - containerPort: 80
       restartPolicy: Always

@@ -1,14 +1,19 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  # Unique key of the Job instance
-  name: test-job
+  name: test-job-ping-server
 spec:
+  backoffLimit: 4
+  selector:
+    matchLabels:
+      job-name: test-job-ping-server
   template:
+    metadata:
+      labels:
+        job-name: test-job-ping-server
     spec:
       containers:
-        - name: ping_server
+        - name: test-job-ping-server
           image: kovekser/ml-in-production:latest
-          imagePullPolicy: Always
-          command: [ "curl", "localhost:80"]
-      restartPolicy: OnFailure
+          command: ["echo",  "Hello world"]
+      restartPolicy: Never
