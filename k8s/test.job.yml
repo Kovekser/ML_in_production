@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: test-job-ping-server
+spec:
+  backoffLimit: 4
+  selector:
+    matchLabels:
+      job-name: test-job-ping-server
+  template:
+    metadata:
+      labels:
+        job-name: test-job-ping-server
+    spec:
+      containers:
+        - name: test-job-ping-server
+          image: kovekser/ml-in-production:latest
+          command: ["echo",  "Hello world"]
+      restartPolicy: Never
