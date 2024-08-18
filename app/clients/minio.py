@@ -11,7 +11,9 @@ class MinioClient:
         self.secret_key = config.MINIO.SECRET_KEY
         self.client = Minio(self.minio_url, self.access_key, self.secret_key)
 
-    def get_all_objects(self, bucket_name: str, prefix: Optional[str] = None, recursive: Optional[bool] = False) -> List[Any]:
+    def get_all_objects(
+        self, bucket_name: str, prefix: Optional[str] = None, recursive: Optional[bool] = False
+    ) -> List[Any]:
         return self.client.list_objects(bucket_name, prefix=prefix, recursive=recursive)
 
     def delete_one_object(self, bucket_name: str, object_name: str) -> None:
@@ -24,10 +26,10 @@ class MinioClient:
         )
         self.client.remove_objects(bucket_name, delete_obj_list)
 
-    def get_object(self, bucket_name: str, object_name: str, version: Optional[str] = None) -> Any:
-        return self.client.get_object(bucket_name, object_name, version_id=version)
+    def download_file(self, bucket_name: str, object_name: str, file_path: str, version: Optional[str] = None) -> Any:
+        return self.client.fget_object(bucket_name, object_name, file_path, version_id=version, progress=Progress)
 
-    def put_object(
-            self, bucket_name: str, object_name: str, data: Any, length: int, metadata: Dict[str, Any] = None
+    def upload_file(
+        self, bucket_name: str, file_path: str, object_name: str, data: Any, length: int, metadata: Dict[str, Any] = None
     ) -> Any:
-        return self.client.put_object(bucket_name, object_name, data, length, metadata=metadata, progress=Progress)
+        return self.client.fput_object(bucket_name, object_name, file_path, metadata=metadata, progress=Progress)
