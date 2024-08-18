@@ -1,0 +1,8 @@
+default:
+  env: local
+  minio:
+    endpoint: XXX
+    access_key: XXX
+    secret_key: XXX
+development:
+  env: development
