@@ -1,7 +1,21 @@
-version: '3.4'
+version: '3.7'
+
 
 services:
-  test-service:
-    build:
-      context: .
-      dockerfile: ./Dockerfile
+#  test-service:
+#    build:
+#      context: .
+#      dockerfile: ./Dockerfile
+
+  minio-service:
+    image: quay.io/minio/minio
+    volumes:
+      - ./data:/data
+    environment:
+      MINIO_ROOT_USER: miniotest
+      MINIO_ROOT_PASSWORD: miniotest
+    ports:
+      - 9000:9000
+      - 9001:9001
+    command: server /data --console-address ":9001"
+

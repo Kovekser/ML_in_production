@@ -1,13 +1,12 @@
+import logging
 from typing import Generator
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-import urllib3
-from app.clients.minio import MinioClient
 
 from .main import get_application
-from config import config
+from app.clients import get_minio_client, MinioClient
 
 
 @pytest.fixture(scope="session")
@@ -23,7 +22,12 @@ def client_fixture(app: FastAPI) -> TestClient:
 
 
 @pytest.fixture
-def minio_client():
-    client = MinioClient(http_client=urllib3.PoolManager())
-    client.client.make_bucket("testbucket")
+def minio_client() -> MinioClient:
+    client = get_minio_client()
+    if client.client.bucket_exists("testbucket"):
+        client.delete_many_objects("testbucket", recursive=True)
+        client.client.remove_bucket("testbucket")
     yield client
+    if client.client.bucket_exists("testbucket"):
+        client.delete_many_objects("testbucket", recursive=True)
+        client.client.remove_bucket("testbucket")
