@@ -1,8 +1,14 @@
 default:
   env: local
   minio:
-    endpoint: XXX
+    host: XXX
+    port: XXX
     access_key: XXX
     secret_key: XXX
-development:
-  env: development
+test:
+  env: test
+  minio:
+    host: XXX
+    port: XXX
+    access_key: XXX
+    secret_key: XXX
