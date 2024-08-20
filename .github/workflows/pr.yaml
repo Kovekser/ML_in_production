@@ -16,8 +16,6 @@ jobs:
     services:
       minio:
         image: lazybit/minio
-        volumes:
-          - ${{ github.workspace }}/data:/data
         env:
           MINIO_ROOT_USER: miniotest
           MINIO_ROOT_PASSWORD: miniotest
@@ -41,7 +39,7 @@ jobs:
         env:
           ENV: test
           PYTHONPATH: ./app:.
-          HOST: 0.0.0.0
-          PORT: 9000
-          ACCESS_KEY: miniotest
-          SECRET_KEY: miniotest
+          MINIO__HOST: 0.0.0.0
+          MINIO__PORT: 9000
+          MINIO__ACCESS_KEY: miniotest
+          MINIO__SECRET_KEY: miniotest
