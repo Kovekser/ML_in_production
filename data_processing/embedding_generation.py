@@ -90,6 +90,7 @@ def run_embedding_generator_ray(model, data: pd.DataFrame):
 
 
 def run_ray_many(max_workers: int = 4):
+    ray.init(include_dashboard=True, dashboard_host='127.0.0.1', dashboard_port=8265)
     model = SentenceTransformer('sentence-transformers/msmarco-distilbert-cos-v5')
     nltk.download('stopwords')
     nltk.download('punkt_tab')
