@@ -69,5 +69,9 @@ dvc pull data.dvc
 After changes were done to track them remotely use the following commands:
 ```bash
 dvc add data/data.csv
-dvc
+dvc push
+
+git add data/data.csv.dvc
+git commit -m "Add data"
+git push
 ```
