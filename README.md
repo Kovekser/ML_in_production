@@ -55,3 +55,19 @@ login: minio
 password: minio123
 ```
 After login object storage is ready to be used in the k8s cluster.
+
+## Data
+Data is stored in bucket path s3://ss-test-bucket-kovalenko/dvstore
+
+To download data use the following command:
+```bash
+dvc init
+dvc remote add -d storage s3://ss-test-bucket-kovalenko/dvstore
+dvc pull data.dvc
+```
+
+After changes were done to track them remotely use the following commands:
+```bash
+dvc add data/data.csv
+dvc
+```
