@@ -75,3 +75,22 @@ git add data/data.csv.dvc
 git commit -m "Add data"
 git push
 ```
+## Argilla
+To run Argilla locally use the following command:
+```bash
+docker compose -f argilla/docker-compose.yml up
+```
+To sign in use the following credentials:
+```
+login: argilla
+password: 12345678
+```
+To upload dataset run in command line the following command:
+```bash
+python app/argilla_labeling.py -U filename.csv
+```
+
+To download data to JSON file run in command line the following command:
+```bash
+python app/argilla_labeling.py -D filename.json
+```
