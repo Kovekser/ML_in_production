@@ -25,6 +25,7 @@ ray = "==2.35.0"
 httpx = "==0.24.1"
 dvc = "==3.55.2"
 argilla = "==2.1.0"
+openai = "==1.47.0"
 mosaicml-streaming = "==0.8.1"
 
 [dev-packages]

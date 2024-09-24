@@ -1,12 +1,20 @@
 import argilla as rg
-from csv import DictReader
+from csv import DictReader, DictWriter
 import argparse
+from app.labeling.openai_labeling import OpenAIClient, LabelResponseOne
+from typing import List, Optional
 
 parser = argparse.ArgumentParser()
+parser.add_argument("--dataset", "-DS", type=str, default="funding_event_analysis")
 parser.add_argument("--upload", "-U", type=str)
 parser.add_argument("--download", "-D", type=str)
+parser.add_argument("--suggest", "-S", type=bool, default=False)
 
 args = parser.parse_args()
+dataset_name = args.dataset
+print(f"dataset_name: {dataset_name}")
+suggestion = args.suggest
+print(f"Suggestion: {suggestion}")
 upload_file = args.upload
 print(f"upload_file: {upload_file}")
 download_file = args.download
@@ -14,8 +22,6 @@ print(f"download_file: {download_file}")
 
 
 class ArgillaLabelClient:
-    dataset_name = "funding_event_analysis"
-
     def __init__(self, api_url: str, api_key: str, workspace: str):
 
         self._labels = ["company", "location", "description"]
@@ -26,6 +32,7 @@ class ArgillaLabelClient:
 
         self._workspace_name = workspace
         self.workspace = self._get_or_create_workspace()
+        self.openai_client = OpenAIClient()
 
     def _get_or_create_workspace(self):
         my_workspace = self.client.workspaces(self._workspace_name)
@@ -66,7 +73,9 @@ class ArgillaLabelClient:
         return dataset
 
     def create_dataset(self, dataset_name: str, ):
-        dataset = rg.Dataset(name=dataset_name, settings=self.dataset_settings, client=self.client)
+        dataset = rg.Dataset(
+            name=dataset_name, settings=self.dataset_settings, client=self.client, workspace=self.workspace,
+        )
         dataset.create()
         return dataset
 
@@ -76,6 +85,7 @@ class ArgillaLabelClient:
     def upload_records(self, dataset_name, records):
         dataset = self.get_or_create_dataset(dataset_name)
         dataset.records.log(records)
+        print(f"Records were uploaded to the dataset {dataset_name}")
 
     def create_records(self, filename: str):
         records = []
@@ -90,20 +100,64 @@ class ArgillaLabelClient:
                 records.append(x)
         return records
 
+    @staticmethod
+    def create_suggestion(openai_suggestions: List[LabelResponseOne]) -> rg.Suggestion:
+        print(f"Creating suggestions {openai_suggestions}")
+        suggestion_vaues = []
+        for suggestion in openai_suggestions:
+            suggestion_vaues.append(suggestion.model_dump(mode="json"))
+        return rg.Suggestion(
+                    question_name="entity",
+                    value=suggestion_vaues,
+                    agent="openai",
+                )
+
+    def create_records_with_suggestions(self, filename: str, dataset_name, num_of_records: Optional[int] = None):
+        records = []
+        with open(filename) as f, open("errors.txt", "w") as errors:
+            reader = DictReader(f)
+            writer = DictWriter(errors, fieldnames=["id", "event_text", "labels"])
+            for row in reader:
+                suggestions = self.openai_client.generate_suggestions(row["event_text"])
+                r = rg.Record(
+                    fields={
+                        "funding_event": row["event_text"],
+                    },
+                    suggestions=[self.create_suggestion(suggestions)],
+                )
+                try:
+                    self.upload_records(dataset_name, [r])
+                except Exception as e:
+                    writer.writerow({"id": row["id"], "event_text": row["event_text"], "labels": [s.model_dump(mode="json") for s in suggestions]})
+                    print(f"Error uploading record: {r}")
+                    print(f"Error: {e}")
+                    continue
+                print(f"Processed {len(records)} records")
+                if num_of_records and len(records) == num_of_records:
+                    break
+        return records
+
     def download_records(self, dataset: str, filename: str):
         dataset = self.get_or_create_dataset(dataset)
         dataset.records.to_json(filename)
+        print(f"Records were downloaded to the file {filename}")
 
 
 if __name__ == "__main__":
+    if not dataset_name:
+        raise ValueError("Dataset name is required")
+
     client = ArgillaLabelClient(
         api_url="http://localhost:6900",
         api_key="argilla.apikey",
         workspace="admin",
     )
     print(f"Client was created")
-    if upload_file:
+
+    if upload_file and not suggestion:
         records = client.create_records(upload_file)
-        client.upload_records(client.dataset_name, records)
-    if download_file:
-        client.download_records(client.dataset_name, download_file)
+        client.upload_records(dataset_name, records)
+    elif upload_file and suggestion:
+        records = client.create_records_with_suggestions(upload_file, dataset_name)
+    elif download_file:
+        client.download_records(dataset_name, download_file)
