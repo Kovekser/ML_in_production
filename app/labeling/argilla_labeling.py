@@ -1,5 +1,5 @@
 import argilla as rg
-from csv import DictReader, DictWriter
+from csv import DictReader
 import argparse
 from app.labeling.openai_labeling import OpenAIClient, LabelResponseOne
 from typing import List, Optional
@@ -115,9 +115,8 @@ class ArgillaLabelClient:
 
     def create_records_with_suggestions(self, filename: str, dataset_name, num_of_records: Optional[int] = None):
         records = []
-        with open(filename) as f, open("errors.txt", "w") as errors:
+        with open(filename) as f:
             reader = DictReader(f)
-            writer = DictWriter(errors, fieldnames=["id", "event_text", "labels"])
             for row in reader:
                 event_text = self.pre_process_text(row["event_text"])
                 suggestions = self.openai_client.generate_suggestions(event_text)
@@ -130,7 +129,6 @@ class ArgillaLabelClient:
                 try:
                     self.upload_records(dataset_name, [r])
                 except Exception as e:
-                    writer.writerow({"id": row["id"], "event_text": event_text, "labels": [s.model_dump(mode="json") for s in suggestions]})
                     print(f"Error uploading record: {r}")
                     print(f"Error: {e}")
                     continue
