@@ -3,6 +3,7 @@ from csv import DictReader, DictWriter
 import argparse
 from app.labeling.openai_labeling import OpenAIClient, LabelResponseOne
 from typing import List, Optional
+import re
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", "-DS", type=str, default="funding_event_analysis")
@@ -118,17 +119,18 @@ class ArgillaLabelClient:
             reader = DictReader(f)
             writer = DictWriter(errors, fieldnames=["id", "event_text", "labels"])
             for row in reader:
-                suggestions = self.openai_client.generate_suggestions(row["event_text"])
+                event_text = self.pre_process_text(row["event_text"])
+                suggestions = self.openai_client.generate_suggestions(event_text)
                 r = rg.Record(
                     fields={
-                        "funding_event": row["event_text"],
+                        "funding_event": event_text,
                     },
                     suggestions=[self.create_suggestion(suggestions)],
                 )
                 try:
                     self.upload_records(dataset_name, [r])
                 except Exception as e:
-                    writer.writerow({"id": row["id"], "event_text": row["event_text"], "labels": [s.model_dump(mode="json") for s in suggestions]})
+                    writer.writerow({"id": row["id"], "event_text": event_text, "labels": [s.model_dump(mode="json") for s in suggestions]})
                     print(f"Error uploading record: {r}")
                     print(f"Error: {e}")
                     continue
@@ -141,6 +143,12 @@ class ArgillaLabelClient:
         dataset = self.get_or_create_dataset(dataset)
         dataset.records.to_json(filename)
         print(f"Records were downloaded to the file {filename}")
+
+    @staticmethod
+    def pre_process_text(text: str) -> str:
+        text = text.encode("ascii", errors="ignore").decode()
+        text = re.sub(' +', ' ', text)
+        return " ".join(text.split())
 
 
 if __name__ == "__main__":
