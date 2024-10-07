@@ -8,6 +8,18 @@ on:
 jobs:
   tests:
     runs-on: ubuntu-latest
+    services:
+      minio:
+        image: lazybit/minio
+        volumes:
+          - ${{ github.workspace }}/data:/data
+        env:
+          MINIO_ROOT_USER: miniotest
+          MINIO_ROOT_PASSWORD: miniotest
+        ports:
+          - 9000:9000
+        options: --name=minio --health-cmd "curl http://localhost:9000/minio/health/live"
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,7 +33,10 @@ jobs:
           pip install pipenv
           pipenv lock --dev
           pipenv install --dev
-          PYTHONPATH=./app:. pipenv run python3 -m pytest .
+          pipenv run python3 -m pytest .
+        env:
+          ENV: test
+          PYTHONPATH: ./app:.
 
   push_to_registry:
     name: push docker image to hub

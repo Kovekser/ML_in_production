@@ -1,0 +1,14 @@
+default:
+  env: local
+  minio:
+    host: XXX
+    port: XXX
+    access_key: XXX
+    secret_key: XXX
+test:
+  env: test
+  minio:
+    host: XXX
+    port: XXX
+    access_key: XXX
+    secret_key: XXX
