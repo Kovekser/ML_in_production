@@ -8,7 +8,7 @@ default:
 test:
   env: test
   minio:
-    host: XXX
-    port: XXX
-    access_key: XXX
-    secret_key: XXX
+    host: 0.0.0.0
+    port: 9000
+    access_key: miniotest
+    secret_key: miniotest
