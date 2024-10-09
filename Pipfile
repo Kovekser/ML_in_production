@@ -1,0 +1,31 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[[source]]
+name = "torch"
+url = "https://download.pytorch.org/whl/cpu/"
+verify_ssl = true
+
+[packages]
+asgiref = "==3.6.0"
+dynaconf = "==3.2.5"
+fastapi = "==0.110.1"
+minio = "==7.2.8"
+pandas = "==2.2.2"
+pyarrow = "==17.0.0"
+nltk = "==3.9.1"
+uvicorn = "==0.23.2"
+sentence-transformers = "==3.0.1"
+torch = "==2.4.0"
+transformers = "==4.44.2"
+ray = "==2.35.0"
+httpx = "==0.24.1"
+mosaicml-streaming = "==0.8.1"
+
+[dev-packages]
+pytest = "==7.4.0"
+
+[requires]
+python_version = "3.12"
