@@ -55,3 +55,42 @@ login: minio
 password: minio123
 ```
 After login object storage is ready to be used in the k8s cluster.
+
+## Data
+Data is stored in bucket path s3://ss-test-bucket-kovalenko/dvstore
+
+To download data use the following command:
+```bash
+dvc init
+dvc remote add -d storage s3://ss-test-bucket-kovalenko/dvstore
+dvc pull data.dvc
+```
+
+After changes were done to track them remotely use the following commands:
+```bash
+dvc add data/data.csv
+dvc push
+
+git add data/data.csv.dvc
+git commit -m "Add data"
+git push
+```
+## Argilla
+To run Argilla locally use the following command:
+```bash
+docker compose -f argilla/docker-compose.yml up
+```
+To sign in use the following credentials:
+```
+login: argilla
+password: 12345678
+```
+To upload dataset run in command line the following command:
+```bash
+python app/argilla_labeling.py -U filename.csv
+```
+
+To download data to JSON file run in command line the following command:
+```bash
+python app/argilla_labeling.py -D filename.json
+```
