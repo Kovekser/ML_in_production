@@ -1,0 +1,5 @@
+outs:
+- md5: 7ea3424344d77c25e5be5f0cd2fb09c9
+  size: 60111
+  hash: md5
+  path: descriptions.csv
