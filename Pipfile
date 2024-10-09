@@ -22,6 +22,7 @@ torch = "==2.4.0"
 transformers = "==4.44.2"
 ray = "==2.35.0"
 httpx = "==0.24.1"
+mosaicml-streaming = "==0.8.1"
 
 [dev-packages]
 pytest = "==7.4.0"
