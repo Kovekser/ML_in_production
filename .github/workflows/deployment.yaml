@@ -11,8 +11,6 @@ jobs:
     services:
       minio:
         image: lazybit/minio
-        volumes:
-          - ${{ github.workspace }}/data:/data
         env:
           MINIO_ROOT_USER: miniotest
           MINIO_ROOT_PASSWORD: miniotest
