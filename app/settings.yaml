@@ -1,10 +1,25 @@
 default:
   env: local
+  wandb_api_key: XXX
+  wandb_project: XXX
+  model: XXX
+  model_base_url: XXX
+  model_api_key: XXX
   minio:
     host: XXX
     port: XXX
     access_key: XXX
     secret_key: XXX
+  argilla:
+    host: http://localhost:6900
+    api_key: argilla.apikey
+    workspace: admin
+  OPENAI_API_KEY: XXX
+product:
+  argilla:
+    host: XXX
+    api_key: XXX
+    workspace: XXX
 test:
   env: test
   minio:
