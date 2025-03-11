@@ -1,8 +1,18 @@
+__all__ = ["OpenAIClient", "LabelsEnum", "LabelResponseOne", "LabelResponse", "get_ai_client"]
+import wandb
 from pydantic import BaseModel
 from enum import Enum
 from openai import OpenAI
 from typing import List, Set
 import re
+import weave
+from app.config import config
+from .base import BaseLLMClient
+
+
+wandb.login(key=config.wandb_api_key)
+project = ".".join(config.MODEL.split(":"))
+weave.init(project)
 
 
 class LabelsEnum(str, Enum):
@@ -22,11 +32,12 @@ class LabelResponse(BaseModel):
     entities: List[LabelResponseOne]
 
 
-class OpenAIClient:
-    def __init__(self):
-        self.client = OpenAI()
+class OpenAIClient(BaseLLMClient):
+    def __init__(self, client: OpenAI = None) -> None:
+        super().__init__(client)
 
-    def generate_suggestions(self, text: str) -> List[LabelResponseOne]:
+    @weave.op()
+    def generate_labels(self, text: str) -> List[LabelResponseOne]:
         prompt = f"""There is funding event article: {text}
 Put labels to information from this article (if it is available) : company, location, description. Labels should not overlap.
 Fields start and end for labels should be exact positions of symbols in the original text.
@@ -36,10 +47,10 @@ All available locations and companies should be labeled if they are mentioned ex
 Description which describe current main economic activity only should be labeled excluding funding event
         """
         results = set()
-        response = self.client.beta.chat.completions.parse(
-            model="gpt-4o-2024-08-06",
+        response = self._client.beta.chat.completions.parse(
+            model="gpt-4o",
             messages=[
-                {"role": "system", "content": "You investor and funding events expert"},
+                {"role": "system", "content": self._system_content},
                 {"role": "user", "content": prompt},
             ],
             response_format=LabelResponse,
@@ -75,3 +86,11 @@ Description which describe current main economic activity only should be labeled
                         labels.pop(i)
                     break
         return labels
+
+
+def get_ai_client():
+    if config.MODEL != "gpt-4o":
+        client = OpenAI(base_url=config.MODEL_BASE_URL, api_key=config.MODEL_API_KEY)
+    else:
+        client = OpenAI()
+    return OpenAIClient(client=client)
