@@ -169,6 +169,6 @@ def download_records(
 ):
     client = get_argilla_client()
     if download_filename:
-        client.download_records_json(dataset_name, f"{dataset_name}_processed_{datetime.datetime.now().date()}.csv")
+        client.download_records_json(dataset_name, f"{dataset_name}_processed_{datetime.datetime.now().date()}.json")
     elif download_path:
         client.download_records_dataset(dataset_name, download_path)

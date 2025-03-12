@@ -13,7 +13,7 @@ from trl import SFTTrainer, SFTConfig
 from description_summary.fine_tuner.data import process_dataset_summaries
 from description_summary.utils import setup_logger
 import torch
-from peft import LoraConfig, TaskType, get_peft_model
+from peft import LoraConfig, TaskType
 
 logger = logging.getLogger(__name__)
 torch.mps.empty_cache()
@@ -23,6 +23,7 @@ torch.mps.empty_cache()
 class DataTrainingArguments:
     train_file: str
     test_file: str
+    path_to_data: str
 
 
 @dataclass
@@ -103,8 +104,7 @@ def train(config_path: Path, subsample: float, new_data: bool):
         model_id=model_args.model_id,
         train_file=data_args.train_file,
         test_file=data_args.test_file,
-        subsample=subsample,
-        new=new_data,
+        path_to_data=data_args.path_to_data,
     )
     logger.info(dataset_chatml["train"][0])
 

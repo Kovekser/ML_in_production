@@ -24,6 +24,7 @@ rouge-score = "==0.1.2"
 uvicorn = "==0.23.2"
 sagemaker = "==2.240.0"
 sentence-transformers = "==3.0.1"
+s3fs = "==2025.3.0"
 torch  = { index = "torch", version = "==2.4.0"}
 transformers = "==4.49.0"
 ray = "==2.35.0"

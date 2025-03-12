@@ -76,6 +76,10 @@ class ArgillaBaseLabelClient:
         dataset.records.to_json(path_)
         return
 
+    def download_records_dict(self, dataset_name: str) -> dict:
+        dataset = self.get_or_create_dataset(dataset_name)
+        return dataset.records.to_dict()
+
 
     @staticmethod
     def pre_process_text(text: str) -> str:
