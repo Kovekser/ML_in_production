@@ -7,31 +7,29 @@ from transformers import (
 )
 import logging
 from pathlib import Path
-
-from dataclasses import dataclass
+import argparse
+import wandb
 from trl import SFTTrainer, SFTConfig
-from description_summary.fine_tuner.data import process_dataset_summaries
-from description_summary.utils import setup_logger
+
+from conf.arguments import DataTrainingArguments, ModelArguments
+from data import format_dataset_summaries
+from utils import setup_logger
 import torch
 from peft import LoraConfig, TaskType
+import os
+from huggingface_hub import login
 
 logger = logging.getLogger(__name__)
-torch.mps.empty_cache()
+hf_token = os.getenv("HF_TOKEN")
+if hf_token:
+    login(token=hf_token)
+else:
+    raise ValueError("HF_TOKEN not found in environment variables")
 
+wandb_api_key = os.getenv("WANDB_API_KEY")
+if wandb_api_key:
+    wandb.login(key=wandb_api_key)
 
-@dataclass
-class DataTrainingArguments:
-    train_file: str
-    test_file: str
-    path_to_data: str
-
-
-@dataclass
-class ModelArguments:
-    model_id: str
-    lora_r: int
-    lora_alpha: int
-    lora_dropout: float
 
 
 def get_config(config_path: Path):
@@ -42,14 +40,20 @@ def get_config(config_path: Path):
     return model_args, data_args, training_args
 
 
-def get_model(model_id: str, device_map):
-    if torch.cuda.is_available() and torch.cuda.is_bf16_supported():
-        compute_dtype = torch.bfloat16
+def get_model(model_id: str):
+    device_map = None
+    if torch.cuda.is_available():
+        if torch.cuda.is_bf16_supported():  # Check BF16 support
+            compute_dtype = torch.bfloat16  # Use BF16 (preferred on Ampere)
+        else:
+            compute_dtype = torch.float16
         attn_implementation = "flash_attention_2"
         device = "cuda"
+        device_map = "auto"
         # If bfloat16 is not supported, 'compute_dtype' is set to 'torch.float16' and 'attn_implementation' is set to 'sdpa'.
     elif torch.backends.mps.is_available():
         # MPS doesn't currently support bfloat16, so use float16
+        torch.mps.empty_cache()
         compute_dtype = torch.float16
         attn_implementation = "sdpa"
         device = "mps"
@@ -68,19 +72,27 @@ def get_model(model_id: str, device_map):
     tokenizer.pad_token_id = tokenizer.convert_tokens_to_ids(tokenizer.pad_token)
     tokenizer.padding_side = "left"
 
-    model = AutoModelForCausalLM.from_pretrained(
-        model_id,
-        torch_dtype=compute_dtype,
-        trust_remote_code=True,
-        # device_map=device_map,
-        attn_implementation=attn_implementation,
-    )
+    if not device_map:
+        model = AutoModelForCausalLM.from_pretrained(
+            model_id,
+            torch_dtype=compute_dtype,
+            trust_remote_code=True,
+            attn_implementation=attn_implementation,
+        )
+    else:
+        model = AutoModelForCausalLM.from_pretrained(
+            model_id,
+            torch_dtype=compute_dtype,
+            trust_remote_code=True,
+            device_map=device_map,
+            attn_implementation=attn_implementation,
+        )
     device = torch.device(device)
     model = model.to(device)
     return tokenizer, model
 
 
-def train(config_path: Path, subsample: float, new_data: bool):
+def train(config_path: Path):
     setup_logger(logger)
 
     model_args, data_args, training_args = get_config(config_path=config_path)
@@ -89,8 +101,6 @@ def train(config_path: Path, subsample: float, new_data: bool):
     logger.info(f"data_args = {data_args}")
     logger.info(f"training_args = {training_args}")
 
-    # device_map = {"": 0}
-    device_map = None
     target_modules = [
         "q_proj",
         "v_proj",
@@ -100,7 +110,7 @@ def train(config_path: Path, subsample: float, new_data: bool):
 
     set_seed(training_args.seed)
 
-    dataset_chatml = process_dataset_summaries(
+    dataset_chatml = format_dataset_summaries(
         model_id=model_args.model_id,
         train_file=data_args.train_file,
         test_file=data_args.test_file,
@@ -108,7 +118,7 @@ def train(config_path: Path, subsample: float, new_data: bool):
     )
     logger.info(dataset_chatml["train"][0])
 
-    tokenizer, model = get_model(model_id=model_args.model_id, device_map=device_map)
+    tokenizer, model = get_model(model_id=model_args.model_id)
     peft_config = LoraConfig(
         r=model_args.lora_r,
         lora_alpha=model_args.lora_alpha,
@@ -131,3 +141,15 @@ def train(config_path: Path, subsample: float, new_data: bool):
     trainer.train()
     trainer.save_model()
     trainer.create_model_card()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config_path", type=str, required=True)  # Expect config path as a string
+    args = parser.parse_args()
+
+    # Convert to a Path object
+    config_path = Path(args.config_path)
+    train(
+        config_path=Path(config_path),
+   )

@@ -4,11 +4,11 @@ import os
 
 dataframe = pd.read_csv('example.csv', header=0, index_col=0)
 dataframe.to_pickle('example.pkl')
-dataframe.to_json('example.json')
+dataframe.to_json('local_train.json')
 dataframe.to_feather('example.feather')
 dataframe.to_parquet('example.parquet')
 
-for file_ in ('example.pkl', 'example.csv', 'example.feather', 'example.parquet', 'example.json'):
+for file_ in ('example.pkl', 'example.csv', 'example.feather', 'example.parquet', 'local_train.json'):
     print(f"File size of {file_}",os.path.getsize(file_))
 
 
@@ -52,11 +52,11 @@ def read_parquet():
 
 
 def load_json():
-    dataframe.to_json('example.json')
+    dataframe.to_json('local_train.json')
 
 
 def read_json():
-    filename = 'example.json'
+    filename = 'local_train.json'
     temp = pd.read_json(filename)
     print(f"Data_match for {filename} is:", dataframe.compare(temp))
 

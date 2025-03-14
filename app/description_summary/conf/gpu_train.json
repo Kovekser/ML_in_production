@@ -1,0 +1,42 @@
+{
+  "train_file": "train.json",
+  "test_file": "test.json",
+  "path_to_data": "s3://ss-bucket-kovalenko-test/descriptions_summaries/datasets/",
+
+  "model_id": "meta-llama/Llama-3.1-8B-Instruct",
+  "lora_r": 8,
+  "lora_alpha": 16,
+  "lora_dropout": 0.05,
+
+
+  "output_dir": "/opt/ml/model",
+  "eval_strategy": "epoch",
+  "num_train_epochs": 2,
+  "do_eval": true,
+
+  "optim": "adamw_torch",
+  "weight_decay": 0.01,
+
+  "per_device_train_batch_size": 2,
+  "per_device_eval_batch_size": 2,
+  "gradient_accumulation_steps": 16,
+  "gradient_checkpointing": true,
+  "learning_rate": 0.00005,
+
+  "warmup_ratio": 0.1,
+
+  "save_steps": 500,
+  "seed": 42,
+  "bf16": true,
+  "fp16": false,
+  "report_to": [
+    "wandb"
+  ],
+  "lr_scheduler_type": "cosine",
+  "log_level" : "debug",
+  "logging_strategy": "steps",
+  "logging_first_step": true,
+  "logging_steps": 10,
+  "eval_on_start": false,
+  "save_strategy": "epoch"
+}
