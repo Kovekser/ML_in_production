@@ -32,7 +32,7 @@ class BaseLLMClient:
     @weave.op()
     def generate_text_summary(self, texts: List[str], company_name: str) -> str:
         prompt = f"""Extract and summarize key information about the company {company_name}. 
-        Use only text provided: {texts}.  Dont start with: Based on the provided text, here's a summary... 
+        Use only text provided: {texts}.  Dont start with: Based on the provided text, here's a summary, etc. 
         Description should be short and informative, up to 5 sentences without markup. 
         If it is impossible to extract relevant information return None
         """

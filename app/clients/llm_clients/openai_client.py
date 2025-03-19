@@ -8,6 +8,8 @@ import re
 import weave
 from app.config import config
 from .base import BaseLLMClient
+import json
+import pandas as pd
 
 
 wandb.login(key=config.wandb_api_key)
@@ -35,6 +37,64 @@ class LabelResponse(BaseModel):
 class OpenAIClient(BaseLLMClient):
     def __init__(self, client: OpenAI = None) -> None:
         super().__init__(client)
+        self._summary_prompt_template = lambda c_name, texts: f"""Extract and summarize key information about 
+        the company {c_name}. Use only text provided: {texts}.  Dont start with: Based on the provided text, 
+        here's a summary, etc. Description should be short and informative, up to 5 sentences without markup. 
+        If it is impossible to extract relevant information return None
+        """
+
+    def generate_summaries_batch_request_upload(self, data: pd.DataFrame):
+        batch_requests = []
+
+        for index, row in data.iterrows():
+            request_item = {
+                "custom_id": row["request_id"],  # Custom ID for tracking
+                "method": "POST",
+                "url": "/v1/chat/completions",
+                "body": {
+                    "model": "gpt-4o-mini",
+                    "messages": [
+                        {"role": "user", "content": self._summary_prompt_template(row["entity_name"], row["descriptions"])},
+                    ],
+                    "temperature": 1,
+                }
+            }
+            batch_requests.append(request_item)
+
+        # Convert to JSONL format (newline-delimited JSON)
+        batch_jsonl = "\n".join(json.dumps(request) for request in batch_requests)
+
+        # Save to a .jsonl file
+        with open("data/batch_requests/summary.jsonl", "w") as file:
+            file.write(batch_jsonl)
+
+        # Upload batch request file
+        batch_input_file = self._client.files.create(
+            file=open("data/batch_requests/summary.jsonl", "rb"),
+            purpose="batch"
+        )
+
+        print(batch_input_file)
+
+        # create batch job
+        batch_object = self._client.batches.create(
+            input_file_id=batch_input_file.id,
+            endpoint="/v1/chat/completions",
+            completion_window="24h",
+            metadata={
+                "description": "synthetic summaries for company descriptions"
+            }
+        )
+        with open("data/batches/batch_summary.json", "w") as file:
+            file.write(json.dumps(batch_object))
+
+    def check_batch_status_and_download(self, batch_id: str):
+        batch = self._client.batches.retrieve(batch_id)
+        print(batch)
+        if batch["status"] == "completed":
+            batch_output_file = self._client.files.content(batch["output_file_id"])
+            print("Downloaded batch responses")
+        return batch
 
     @weave.op()
     def generate_labels(self, text: str) -> List[LabelResponseOne]:

@@ -31,7 +31,6 @@ if wandb_api_key:
     wandb.login(key=wandb_api_key)
 
 
-
 def get_config(config_path: Path):
     parser = HfArgumentParser(
         (ModelArguments, DataTrainingArguments, TrainingArguments)
@@ -136,6 +135,7 @@ def train(config_path: Path):
         eval_dataset=dataset_chatml["test"],
         peft_config=peft_config,
         args=sft_config,
+        processing_class=tokenizer,
     )
 
     trainer.train()
