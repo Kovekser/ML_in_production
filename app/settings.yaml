@@ -1,5 +1,14 @@
 default:
   env: local
+  huggingface:
+    token: XXX
+    base_model_id: XXX
+  sagemaker:
+    instance_type: XXX
+    role_name: XXX
+    bucket: XXX
+    region: XXX
+    summary_adapter: XXX
   wandb_api_key: XXX
   wandb_project: XXX
   model: XXX

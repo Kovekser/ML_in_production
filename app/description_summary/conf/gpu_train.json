@@ -1,7 +1,7 @@
 {
   "train_file": "train.json",
   "test_file": "test.json",
-  "path_to_data": "s3://ss-bucket-kovalenko-test/descriptions_summaries/datasets/",
+  "path_to_data": "s3://ss-bucket-kovalenko-test/datasets/descriptions_summaries/",
 
   "model_id": "meta-llama/Llama-3.1-8B-Instruct",
   "lora_r": 8,

@@ -3,15 +3,16 @@ import boto3
 from sagemaker.huggingface import HuggingFace
 from app.config import config
 
-env = {"HF_TOKEN": config.HF_TOKEN,
+env = {"HF_TOKEN": config.HUGGINGFACE.TOKEN,
        "WANDB_API_KEY": config.WANDB_API_KEY}
 
 my_bucket_name = "ss-bucket-kovalenko-test"
-prefix = "description_summaries"
+prefix = "models/Llama-3.1-8B-Instruct/adapters/description_summaries"
 s3_path = f"s3://{my_bucket_name}/{prefix}"
 
-train_path = f"{s3_path}/datasets/train.json"
-test_path = f"{s3_path}/datasets/test.json"
+dataset_prefix = "datasets/descriptions_summaries"
+train_path = "s3://ss-bucket-kovalenko-test/datasets/descriptions_summaries/train.json"
+test_path = "s3://ss-bucket-kovalenko-test/datasets/descriptions_summaries/test.json"
 
 config_path = "conf/gpu_train.json"
 
