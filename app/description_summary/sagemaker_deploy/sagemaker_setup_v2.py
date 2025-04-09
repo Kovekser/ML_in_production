@@ -5,8 +5,12 @@ import logging
 import sagemaker
 import json
 from time import sleep
+from huggingface_hub import snapshot_download
 
 logger = logging.getLogger(__name__)
+snapshot_download("tloen/alpaca-lora-7b", local_dir="app/djl_multi_lora/lora-multi-adapter/adapters/eng_alpaca", local_dir_use_symlinks=False)
+snapshot_download("22h/cabrita-lora-v0-1", local_dir="app/djl_multi_lora/lora-multi-adapter/adapters/portuguese_alpaca", local_dir_use_symlinks=False)
+
 
 
 class HuggingFaceModelDeploy:
@@ -24,7 +28,6 @@ class HuggingFaceModelDeploy:
         self.model_url = f"{config.SAGEMAKER.BUCKET}{config.HUGGINGFACE.BASE_MODEL_ID}"
         self.base_inference_component_name = f"base-{self.model_name}"
         self.endpoint_name = f"{self.model_name}-endpoint"
-        self.variant_name = "AllTraffic"
 
     def get_container_uri(self):
         try:
@@ -38,16 +41,18 @@ class HuggingFaceModelDeploy:
             logger.error(f"Failed to get container URI: {str(e)}")
             raise
 
+
+
     def create_model_djl_lmi(self):
         try:
             image_uri = "763104351884.dkr.ecr.eu-west-2.amazonaws.com/djl-inference:0.32.0-lmi14.0.0-cu126"
             environment = {"HF_MODEL_ID": config.HUGGINGFACE.BASE_MODEL_ID,
                            'HUGGING_FACE_HUB_TOKEN': config.HUGGINGFACE.TOKEN,
+                           "OPTION_ENABLE_LORA": "true",
                            "OPTION_ROLLING_BATCH": "disable",
                            "OPTION_TENSOR_PARALLEL_DEGREE": "1",
-                           "OPTION_DTYPE": "fp16",
-                           "OPTION_ENABLE_LORA": "true",
                            "OPTION_MAX_LORAS": "5",
+                           "OPTION_DTYPE": "fp16",
                            "OPTION_MAX_LORA_RANK": "64",
                            "OPTION_MAX_CPU_LORAS": "2",
                            "OPTION_LOADFORMAT": "safetensors"}
@@ -102,13 +107,8 @@ class HuggingFaceModelDeploy:
                 ProductionVariants=[{
                     'InstanceType': config.SAGEMAKER.INSTANCE_TYPE,
                     'InitialInstanceCount': 1,
-                    "ManagedInstanceScaling": {
-                        "Status": "ENABLED",
-                        "MinInstanceCount": 1,
-                        "MaxInstanceCount": 2,
-                    },
                     # 'ModelName': self.model_name,
-                    'VariantName': self.variant_name,
+                    'VariantName': 'AllTraffic',
                     'ContainerStartupHealthCheckTimeoutInSeconds': 600,
                     'ModelDataDownloadTimeoutInSeconds': 900,
                     "RoutingConfig": {"RoutingStrategy": "LEAST_OUTSTANDING_REQUESTS"},
@@ -159,10 +159,12 @@ class HuggingFaceModelDeploy:
 
     def create_base_inference_component(self):
         try:
+            variant_name = "AllTraffic"
+
             inference_response = self.sm_client.create_inference_component(
                 InferenceComponentName=self.base_inference_component_name,
                 EndpointName=self.endpoint_name,
-                VariantName=self.variant_name,
+                VariantName=variant_name,
                 Specification={
                     "ModelName": self.model_name,
                     "StartupParameters": {
