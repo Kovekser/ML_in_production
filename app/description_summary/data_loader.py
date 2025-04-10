@@ -21,11 +21,17 @@ class DataLoader:
         self.datasets = None
 
     def create_formatted_dataset(self, dataset: Dataset):
+        data_rows = []
         descriptions = [
             row["company_descriptions"].replace("KBAPI: ", "").replace(" Homepage text: ", "") for row in dataset["fields"]
         ]
         answers = [suggestion["summary"]["value"] for suggestion in dataset["suggestions"]]
-        return Dataset.from_dict({"company_descriptions": descriptions, "summaries": answers})
+        for description, suggestion in zip(descriptions, answers):
+            if not suggestion or suggestion == "":
+                print(f"Empty summary for description: {description}")
+            else:
+                data_rows.append({"company_descriptions": description, "summary": suggestion})
+        return Dataset.from_list(data_rows)
 
     def download_labelled_data(self, random_state: int = 15, subsample: Optional[float] = None) -> DatasetDict:
         dataset_data = self.client.download_records_dict(self.dataset_name)
@@ -45,14 +51,15 @@ class DataLoader:
         print(f"Data saved to: {path_to_save}")
 
     def load_to_json_s3(self, bucket: str, prefix: str):
+        bucket_prefix = f"datasets/{prefix}"
         s3_resource = boto3.Session().resource('s3').Bucket(bucket)
         s3_resource.put_object(
-            Key=path.join(f"{prefix}/datasets", 'train.json'),
-            Body=json.dumps(self.datasets["train"].to_dict())
+            Key=path.join(bucket_prefix, 'train.json'),
+            Body=json.dumps(self.datasets["train"].to_list())
         )
         s3_resource.put_object(
-            Key=path.join(f"{prefix}/datasets", 'test.json'),
-            Body=json.dumps(self.datasets["test"].to_dict())
+            Key=path.join(bucket_prefix, 'test.json'),
+            Body=json.dumps(self.datasets["test"].to_list())
         )
 
 

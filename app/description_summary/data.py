@@ -23,7 +23,7 @@ class SummaryDatasetFormatter:
         messages = []
         user_message = {"role": "user", "content": row["company_descriptions"]}
         messages.append(user_message)
-        assistant_message = {"role": "assistant", "content": row["summaries"]}
+        assistant_message = {"role": "assistant", "content": row["summary"]}
         messages.append(assistant_message)
         print(f"Messages: {messages}")  # Debugging
         return {"messages": messages}
@@ -43,8 +43,8 @@ class SummaryDatasetFormatter:
             test_json = json.load(io.BytesIO(test_response["Body"].read()))
             dataset = DatasetDict(
                 {
-                    "train": Dataset.from_dict(train_json),
-                    "test": Dataset.from_dict(test_json),
+                    "train": Dataset.from_list(train_json),
+                    "test": Dataset.from_list(test_json),
                 }
             )
         else:

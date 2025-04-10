@@ -11,16 +11,16 @@ import argparse
 import wandb
 from trl import SFTTrainer, SFTConfig
 
-from .conf.arguments import DataTrainingArguments, ModelArguments
-from .data import format_dataset_summaries
-from .utils import setup_logger
+from conf.arguments import DataTrainingArguments, ModelArguments
+from data import format_dataset_summaries
+from utils import setup_logger
 import torch
 from peft import LoraConfig, TaskType
 import os
 from huggingface_hub import login
 
 logger = logging.getLogger(__name__)
-hf_token = os.getenv("HUGGINGFACE__TOKEN")
+hf_token = os.getenv("HUGGINGFACE__TOKEN") or os.getenv("HF_TOKEN")
 if hf_token:
     login(token=hf_token)
 else:

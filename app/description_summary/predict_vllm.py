@@ -73,7 +73,7 @@ class Predictor:
             return
         s3_client = boto3.client("s3")
         s3_client.download_file(
-            Bucket = config.sagemaker.bucket,
+            Bucket=config.sagemaker.bucket,
             Key=s3_key,
             Filename=f"{local_path}.tar.gz",
         )

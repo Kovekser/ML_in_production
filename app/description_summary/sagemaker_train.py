@@ -11,8 +11,8 @@ prefix = "models/Llama-3.1-8B-Instruct/adapters/description_summaries"
 s3_path = f"s3://{my_bucket_name}/{prefix}"
 
 dataset_prefix = "datasets/descriptions_summaries"
-train_path = "s3://ss-bucket-kovalenko-test/datasets/descriptions_summaries/train.json"
-test_path = "s3://ss-bucket-kovalenko-test/datasets/descriptions_summaries/test.json"
+train_path = f"s3://ss-bucket-kovalenko-test/{dataset_prefix}/train.json"
+test_path = f"s3://ss-bucket-kovalenko-test/{dataset_prefix}/test.json"
 
 config_path = "conf/gpu_train.json"
 
