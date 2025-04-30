@@ -7,8 +7,9 @@ import torch
 from datasets import Dataset
 from peft import AutoPeftModelForCausalLM
 from tqdm import tqdm
-from transformers import AutoTokenizer, pipeline
+from transformers import AutoTokenizer, pipeline, AutoModelForCausalLM
 from description_summary.summary_evaluate import SummaryEvaluator
+from description_summary.predict_vllm import download_dataset_s3
 
 logger = logging.getLogger()
 
@@ -32,6 +33,7 @@ class Predictor:
             device = "cpu"
         self.device = torch.device(device)
 
+        # new_model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.1-8B-Instruct")
         new_model = AutoPeftModelForCausalLM.from_pretrained(
             model_load_path,
             low_cpu_mem_usage=True,
@@ -39,8 +41,9 @@ class Predictor:
             torch_dtype=compute_dtype,
             attn_implementation=attn_implementation,
             trust_remote_code=True,
-        ).to(self.device)
-        self.merged_model = new_model.merge_and_unload().to(self.device)
+        )
+        self.merged_model = new_model.merge_and_unload()
+        self.merged_model = new_model
 
         self.tokenizer = AutoTokenizer.from_pretrained(
             model_load_path, trust_remote_code=True
@@ -49,7 +52,6 @@ class Predictor:
         self.tokenizer.pad_token_id = self.tokenizer.convert_tokens_to_ids(self.tokenizer.pad_token)
         self.tokenizer.padding_side = "left"
 
-        self.merged_model.eval()
         self.pipe = pipeline("text-generation", model=self.merged_model, tokenizer=self.tokenizer)
 
     @torch.no_grad()
@@ -66,23 +68,27 @@ class Predictor:
         pipe = self.pipe
 
         messages = [{"role": "user", "content": descriptions}]
+        prompt = pipe.tokenizer.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=True
+        )
 
         outputs = pipe(
-            messages,
-            max_new_tokens=150,
+            prompt,
+            max_new_tokens=256,
             do_sample=True,
             num_beams=1,
-            temperature=0.2,
+            temperature=0.5,
             top_k=50,
             top_p=0.95,
             max_time=180,
         )
-        summary = outputs[0]["generated_text"][-1]["content"].replace("\n\n", " ").strip()
+        summary = outputs[0]["generated_text"][len(prompt) :].replace("\n\n", " ").strip()
         return summary
 
 
-def run_inference_on_json(data_path: str, model_load_path: str, result_path: str):
-    df = Dataset.from_json(data_path).to_pandas()
+def run_inference_on_json_tgi(data_path: str, model_load_path: str, result_path: str):
+    ds = download_dataset_s3(data_path)
+    df = ds.to_pandas()
     model = Predictor(model_load_path=model_load_path)
 
     generated_summary = []
